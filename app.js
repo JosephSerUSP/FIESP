@@ -230,17 +230,15 @@ function fitCameraToModels() {
   console.log('Building Center:', center);
   console.log('Building Size:', size);
 
-  // Center controls pivot directly on the building, but shift it slightly to the right
-  // to visually push the building to the left side of the screen (away from the panels)
+  // Center controls pivot directly on the building
   controls.target.copy(center);
-  controls.target.x += 4;
 
   // Bring the camera much closer for a prominent screen view
   const maxDim = Math.max(size.x, size.y, size.z);
   const fovRad = camera.fov * (Math.PI / 180);
   const cameraZ = (maxDim / 2) / Math.tan(fovRad / 2);
 
-  camera.position.set(center.x + 4, center.y + size.y * 0.15, center.z + cameraZ * 0.8);
+  camera.position.set(center.x, center.y + size.y * 0.15, center.z + cameraZ * 0.8);
   controls.maxDistance = maxDim * 4;
   controls.minDistance = maxDim * 0.1;
   controls.update();
