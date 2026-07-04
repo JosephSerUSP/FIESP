@@ -12,6 +12,7 @@ let screenMaterial = null;
 let canvasTexture = null;
 let warper = null;
 let liveStream = null;
+let videoFileElement = null;
 let animationFrameId = null;
 
 // DOM Elements
@@ -23,11 +24,18 @@ const loadingOverlay = document.getElementById('loading-overlay');
 
 // Control Inputs
 const btnUpload = document.getElementById('btn-upload');
+const btnVideo = document.getElementById('btn-video');
 const btnCamera = document.getElementById('btn-camera');
 const uploadControls = document.getElementById('upload-controls');
+const videoControls = document.getElementById('video-controls');
 const cameraControls = document.getElementById('camera-controls');
 const fileInput = document.getElementById('file-input');
 const fileNameDisplay = document.getElementById('file-name');
+const videoFileInput = document.getElementById('video-file-input');
+const videoFileNameDisplay = document.getElementById('video-file-name');
+const videoPlaybackControls = document.getElementById('video-playback-controls');
+const btnPlayPause = document.getElementById('btn-play-pause');
+const btnVideoLoop = document.getElementById('btn-video-loop');
 const cameraSelect = document.getElementById('camera-select');
 const btnToggleCam = document.getElementById('btn-toggle-cam');
 const btnExport = document.getElementById('btn-export');
@@ -370,12 +378,14 @@ function setupUIEventListeners() {
   btnUpload.addEventListener('click', () => {
     btnUpload.classList.add('active');
     btnCamera.classList.remove('active');
+    btnVideo.classList.remove('active');
     uploadControls.classList.remove('hidden');
     cameraControls.classList.add('hidden');
+    videoControls.classList.add('hidden');
     stopWebcam();
-    
+    stopVideoFile();
+
     if (fileInput.files.length === 0) {
-      // Revert to TestTexture if no file uploaded
       const img = new Image();
       img.onload = () => {
         canvasSource.width = img.width;
@@ -390,12 +400,62 @@ function setupUIEventListeners() {
     }
   });
 
+  btnVideo.addEventListener('click', () => {
+    btnVideo.classList.add('active');
+    btnUpload.classList.remove('active');
+    btnCamera.classList.remove('active');
+    videoControls.classList.remove('hidden');
+    uploadControls.classList.add('hidden');
+    cameraControls.classList.add('hidden');
+    stopWebcam();
+  });
+
   btnCamera.addEventListener('click', () => {
     btnCamera.classList.add('active');
     btnUpload.classList.remove('active');
+    btnVideo.classList.remove('active');
     cameraControls.classList.remove('hidden');
     uploadControls.classList.add('hidden');
+    videoControls.classList.add('hidden');
+    stopVideoFile();
     populateCameras();
+  });
+
+  // Video File Upload
+  videoFileInput.addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    videoFileNameDisplay.textContent = file.name;
+    stopVideoFile();
+
+    videoFileElement = document.createElement('video');
+    videoFileElement.src = URL.createObjectURL(file);
+    videoFileElement.loop = btnVideoLoop.classList.contains('active');
+    videoFileElement.muted = true; // muted so autoplay works without user gesture issues
+    videoFileElement.playsInline = true;
+    videoFileElement.play();
+
+    videoPlaybackControls.classList.remove('hidden');
+    btnPlayPause.innerHTML = `&#9646;&#9646; <span data-i18n="pauseBtn">${translations[currentLang]?.pauseBtn || 'Pause'}</span>`;
+  });
+
+  // Play/Pause Toggle
+  btnPlayPause.addEventListener('click', () => {
+    if (!videoFileElement) return;
+    if (videoFileElement.paused) {
+      videoFileElement.play();
+      btnPlayPause.innerHTML = `&#9646;&#9646; <span data-i18n="pauseBtn">${translations[currentLang]?.pauseBtn || 'Pause'}</span>`;
+    } else {
+      videoFileElement.pause();
+      btnPlayPause.innerHTML = `&#9654; <span data-i18n="playBtn">${translations[currentLang]?.playBtn || 'Play'}</span>`;
+    }
+  });
+
+  // Loop Toggle
+  btnVideoLoop.addEventListener('click', () => {
+    const looping = btnVideoLoop.classList.toggle('active');
+    if (videoFileElement) videoFileElement.loop = looping;
   });
 
   // File Upload
@@ -614,6 +674,16 @@ function stopWebcam() {
   }
 }
 
+// Stop Video File Playback
+function stopVideoFile() {
+  if (videoFileElement) {
+    videoFileElement.pause();
+    videoFileElement.src = '';
+    videoFileElement = null;
+  }
+  if (videoPlaybackControls) videoPlaybackControls.classList.add('hidden');
+}
+
 // Animation / Render Loop
 function animate() {
   animationFrameId = requestAnimationFrame(animate);
@@ -624,7 +694,16 @@ function animate() {
     canvasSource.height = videoElement.videoHeight;
     const ctx = canvasSource.getContext('2d');
     ctx.drawImage(videoElement, 0, 0, canvasSource.width, canvasSource.height);
-    
+    triggerWarp();
+  }
+
+  // If video file is active, draw current frame to source canvas and re-warp
+  if (videoFileElement && !videoFileElement.paused && !videoFileElement.ended &&
+      videoFileElement.readyState >= videoFileElement.HAVE_CURRENT_DATA) {
+    canvasSource.width = videoFileElement.videoWidth;
+    canvasSource.height = videoFileElement.videoHeight;
+    const ctx = canvasSource.getContext('2d');
+    ctx.drawImage(videoFileElement, 0, 0, canvasSource.width, canvasSource.height);
     triggerWarp();
   }
 
@@ -649,12 +728,16 @@ const translations = {
     tagline: "Distorção interativa de conteúdo e visualização 3D para a Galeria Digital do SESI.",
     inputSource: "Origem do Conteúdo",
     uploadBtn: "Enviar Imagem",
+    videoBtn: "Vídeo",
     cameraBtn: "Câmera ao Vivo",
     chooseDrag: "Escolha ou Arraste uma Imagem",
+    chooseVideo: "Escolha um Arquivo de Vídeo",
     noFile: "Nenhum arquivo selecionado",
     selectCamera: "Selecionar Câmera:",
     startCam: "Iniciar Câmera",
     stopCam: "Parar Câmera",
+    playBtn: "Reproduzir",
+    pauseBtn: "Pausar",
     inputsBtn: "Entradas",
     loading: "Carregando Modelo 3D da FIESP...",
     textureTitle: "Textura Distorcida 2D",
@@ -677,12 +760,16 @@ const translations = {
     tagline: "Interactive content distortion & 3D preview for the SESI Digital Gallery.",
     inputSource: "Input Source",
     uploadBtn: "Upload Image",
+    videoBtn: "Video",
     cameraBtn: "Live Camera",
     chooseDrag: "Choose or Drag Image",
+    chooseVideo: "Choose a Video File",
     noFile: "No file selected",
     selectCamera: "Select Camera:",
     startCam: "Start Live Feed",
     stopCam: "Stop Live Feed",
+    playBtn: "Play",
+    pauseBtn: "Pause",
     inputsBtn: "Inputs",
     loading: "Loading FIESP 3D Model...",
     textureTitle: "2D Warped Texture",

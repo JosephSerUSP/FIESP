@@ -74,6 +74,10 @@
               <span class="btn-icon">📁</span>
               <span class="btn-text" data-i18n="uploadBtn">Upload Image</span>
             </button>
+            <button id="btn-video" class="input-btn">
+              <span class="btn-icon">🎥</span>
+              <span class="btn-text" data-i18n="videoBtn">Video</span>
+            </button>
             <button id="btn-camera" class="input-btn">
               <span class="btn-icon">📹</span>
               <span class="btn-text" data-i18n="cameraBtn">Live Camera</span>
@@ -89,6 +93,21 @@
               </div>
             </label>
             <input type="file" id="file-input" accept="image/*" style="display: none;">
+          </div>
+
+          <div id="video-controls" class="sub-controls hidden">
+            <label for="video-file-input" class="file-label">
+              <div class="file-dashed">
+                <span class="upload-arrow">↓</span>
+                <span class="upload-text" data-i18n="chooseVideo">Choose a Video File</span>
+                <span class="file-name-display" id="video-file-name" data-i18n="noFile">No file selected</span>
+              </div>
+            </label>
+            <input type="file" id="video-file-input" accept="video/*" style="display: none;">
+            <div id="video-playback-controls" class="hidden" style="margin-top: 12px; display: flex; gap: 8px;">
+              <button id="btn-play-pause" class="action-btn-primary" style="flex: 1;">&#9654; <span data-i18n="playBtn">Play</span></button>
+              <button id="btn-video-loop" class="input-btn" style="flex: 0 0 auto; padding: 10px 14px;" title="Loop">🔁</button>
+            </div>
           </div>
 
           <div id="camera-controls" class="sub-controls hidden">
