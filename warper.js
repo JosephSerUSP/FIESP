@@ -54,6 +54,12 @@ export class FiespWarper {
 
     const activeH = this.activeH;
 
+    // Reference total width: the bottom row (widest), used as a fixed scale denominator
+    const wL_ref = this.L_Bx2 - this.L_Bx1;  // ~173.056
+    const wM_ref = this.M_Bx2 - this.M_Bx1;  // ~195.251
+    const wR_ref = this.R_Bx2 - this.R_Bx1;  // ~122.509
+    const wTotal_ref = wL_ref + wM_ref + wR_ref; // ~490.816
+
     for (let dy = 0; dy < h; dy++) {
       if (dy >= activeH) continue;
 
@@ -61,14 +67,14 @@ export class FiespWarper {
       const t = dy / activeH;
 
       // Interpolated panel edge X positions at this row
-      const xL1 = this.L_Tx1 + (this.L_Bx1 - this.L_Tx1) * t; // left edge of left panel (≈ 0.499, constant)
-      const xL2 = this.L_Tx2 + (this.L_Bx2 - this.L_Tx2) * t; // right edge of left panel
-      const xM1 = this.M_Tx1 + (this.M_Bx1 - this.M_Tx1) * t; // left edge of middle panel
-      const xM2 = this.M_Tx2 + (this.M_Bx2 - this.M_Tx2) * t; // right edge of middle panel
-      const xR1 = this.R_Tx1 + (this.R_Bx1 - this.R_Tx1) * t; // left edge of right panel
-      const xR2 = this.R_Tx2 + (this.R_Bx2 - this.R_Tx2) * t; // right edge of right panel (≈ 542.502, constant)
+      const xL1 = this.L_Tx1 + (this.L_Bx1 - this.L_Tx1) * t;
+      const xL2 = this.L_Tx2 + (this.L_Bx2 - this.L_Tx2) * t;
+      const xM1 = this.M_Tx1 + (this.M_Bx1 - this.M_Tx1) * t;
+      const xM2 = this.M_Tx2 + (this.M_Bx2 - this.M_Tx2) * t;
+      const xR1 = this.R_Tx1 + (this.R_Bx1 - this.R_Tx1) * t;
+      const xR2 = this.R_Tx2 + (this.R_Bx2 - this.R_Tx2) * t;
 
-      // Panel widths and total connected width at this row
+      // Panel widths at this row
       const wL = xL2 - xL1;
       const wM = xM2 - xM1;
       const wR = xR2 - xR1;
@@ -78,26 +84,27 @@ export class FiespWarper {
       const v_sample = t;
 
       for (let dx = 0; dx < w; dx++) {
-        // Determine which panel (if any) this pixel belongs to,
+        // Determine which panel this pixel belongs to,
         // and compute its position in the "flat joined" strip.
         let flatX = -1;
 
         if (dx >= xL1 && dx < xL2) {
-          // LEFT PANEL — offset from left panel's own left edge
           flatX = dx - xL1;
         } else if (dx >= xM1 && dx < xM2) {
-          // MIDDLE PANEL — after the full width of the left panel
           flatX = wL + (dx - xM1);
         } else if (dx >= xR1 && dx <= xR2) {
-          // RIGHT PANEL — after left and middle panel widths
           flatX = wL + wM + (dx - xR1);
         }
-        // Gap zones (between panels) and areas outside panels: leave black.
 
         if (flatX < 0) continue;
 
-        // Map flat position uniformly to source UV
-        const u_sample = flatX / wTotal;
+        // Sample the source using a FIXED scale (bottom row width).
+        // Center the strip: the midpoint of the joined strip at this row
+        // maps to u=0.5 in the source image.
+        const u_sample = 0.5 + (flatX - wTotal / 2) / wTotal_ref;
+
+        // Discard if outside the source image bounds
+        if (u_sample < 0 || u_sample > 1) continue;
 
         const spx = Math.max(0, Math.min(u_sample * (srcW - 1), srcW - 1));
         const spy = Math.max(0, Math.min(v_sample * (srcH - 1), srcH - 1));
