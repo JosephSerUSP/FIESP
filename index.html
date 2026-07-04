@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script>
+    (function() {
+      function sendLog(type, args) {
+        const msg = Array.from(args).map(arg => {
+          if (typeof arg === 'object') {
+            try { return JSON.stringify(arg); } catch (e) { return String(arg); }
+          }
+          return String(arg);
+        }).join(' ');
+        fetch('/log', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ type, msg })
+        }).catch(() => {});
+      }
+      const originalLog = console.log;
+      console.log = function() { originalLog.apply(console, arguments); sendLog('log', arguments); };
+      const originalWarn = console.warn;
+      console.warn = function() { originalWarn.apply(console, arguments); sendLog('warn', arguments); };
+      const originalError = console.error;
+      console.error = function() { originalError.apply(console, arguments); sendLog('error', arguments); };
+      window.addEventListener('error', function(e) {
+        sendLog('error', [`Uncaught Exception: ${e.message} at ${e.filename}:${e.lineno}:${e.colno}`]);
+      });
+      window.addEventListener('unhandledrejection', function(e) {
+        sendLog('error', [`Unhandled Promise Rejection: ${e.reason}`]);
+      });
+    })();
+  </script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIESP Building 3D UV Mapper</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Space+Grotesk:wght@400;600;700&display=swap" rel="stylesheet">
+  <!-- Import Map for Three.js and OrbitControls -->
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+        "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar / Control Panel -->
+    <aside class="sidebar" id="app-sidebar">
+      <div class="drawer-handle" id="drawer-handle">
+        <span class="handle-bar"></span>
+      </div>
+      <button id="btn-close-sidebar" class="close-sidebar-btn">×</button>
+      <header class="app-header">
+        <div class="logo-container">
+          <div class="logo-glow"></div>
+          <h1>FIESP</h1>
+          <span class="logo-sub">3D UV MAPPER</span>
+        </div>
+        <p class="tagline">Interactive content distortion & 3D preview for the SESI Digital Gallery.</p>
+      </header>
+
+      <div class="control-sections">
+        <!-- Section 1: Content Input -->
+        <section class="control-card">
+          <h2 class="section-title"><span class="icon">📸</span> Input Source</h2>
+          <div class="input-options">
+            <button id="btn-upload" class="input-btn active">
+              <span class="btn-icon">📁</span>
+              <span class="btn-text">Upload Image</span>
+            </button>
+            <button id="btn-camera" class="input-btn">
+              <span class="btn-icon">📹</span>
+              <span class="btn-text">Live Camera</span>
+            </button>
+          </div>
+
+          <div id="upload-controls" class="sub-controls">
+            <label for="file-input" class="file-label">
+              <div class="file-dashed">
+                <span class="upload-arrow">↓</span>
+                <span class="upload-text">Choose or Drag Image</span>
+                <span class="file-name-display" id="file-name">No file selected</span>
+              </div>
+            </label>
+            <input type="file" id="file-input" accept="image/*" style="display: none;">
+          </div>
+
+          <div id="camera-controls" class="sub-controls hidden">
+            <div class="camera-select-wrapper">
+              <label for="camera-select">Select Camera:</label>
+              <select id="camera-select" class="custom-select"></select>
+            </div>
+            <button id="btn-toggle-cam" class="action-btn-primary">Start Live Feed</button>
+          </div>
+        </section>
+      </div>
+    </aside>
+
+    <!-- Main Viewport Area -->
+    <main class="viewport-area">
+      <!-- Floating UV Toggle for Mobile (We can hide this now, since preview is collapsible in top-left) -->
+      
+      <!-- Floating HUD Controls -->
+      <div class="hud-controls">
+        <button id="hud-btn-source" class="hud-btn">📷 Inputs</button>
+      </div>
+
+      <!-- 3D Canvas Container -->
+      <div id="canvas3d-container">
+        <!-- Canvas will be appended here -->
+        <div class="loading-overlay" id="loading-overlay">
+          <div class="spinner"></div>
+          <p>Loading FIESP 3D Model...</p>
+        </div>
+      </div>
+
+      <!-- Top-Left Floating Panels Container -->
+      <div class="top-left-panels">
+        <!-- 1. Floating 2D UV Preview Panel -->
+        <div class="uv-preview-panel glass" id="uv-preview-panel">
+          <div class="panel-header">
+            <h3>2D Warped Texture</h3>
+            <button id="btn-toggle-uv" class="panel-toggle-btn">−</button>
+          </div>
+          <div class="panel-body" id="uv-panel-body">
+            <canvas id="canvas-warped" class="preview-canvas"></canvas>
+            <div class="uv-info">This is the distorted image sent to the building's LED system.</div>
+            <button id="btn-export" class="action-btn-success compact-export-btn">
+              <span>💾</span> Export Texture
+            </button>
+          </div>
+        </div>
+
+        <!-- 2. Floating Preview Controls Panel -->
+        <div class="uv-preview-panel glass collapsed" id="controls-preview-panel">
+          <div class="panel-header">
+            <h3>Preview Controls</h3>
+            <button id="btn-toggle-controls" class="panel-toggle-btn">+</button>
+          </div>
+          <div class="panel-body" id="controls-panel-body">
+            <div class="control-group">
+              <label class="control-label-mini">UV Map Channel</label>
+              <select id="uv-channel-select" class="styled-select mini-select">
+                <option value="uv2" selected>Channel 2 (Calibrated)</option>
+                <option value="uv1">Channel 1</option>
+                <option value="uv">Default (Channel 0)</option>
+              </select>
+            </div>
+            
+            <div class="toggle-grid mini-grid">
+              <label class="switch-container">
+                <input type="checkbox" id="chk-env">
+                <span class="switch-slider"></span>
+                <span class="switch-label">Show Environment</span>
+              </label>
+              <label class="switch-container">
+                <input type="checkbox" id="chk-uv-wireframe">
+                <span class="switch-slider"></span>
+                <span class="switch-label">Show UV Overlay</span>
+              </label>
+              <label class="switch-container">
+                <input type="checkbox" id="chk-wireframe">
+                <span class="switch-slider"></span>
+                <span class="switch-label">Wireframe Mode</span>
+              </label>
+              <label class="switch-container">
+                <input type="checkbox" id="chk-auto-rotate">
+                <span class="switch-slider"></span>
+                <span class="switch-label">Auto-Rotate Building</span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Hidden standard input canvas for image resizing / webcam sampling -->
+      <canvas id="canvas-source" style="display: none;"></canvas>
+    </main>
+  </div>
+
+  <!-- Webcam video stream element (hidden) -->
+  <video id="webcam-video" autoplay playsinline style="display: none;"></video>
+
+  <!-- Application Logic -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
