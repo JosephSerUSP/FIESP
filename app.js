@@ -264,8 +264,8 @@ function loadModels() {
     (gltf) => {
       envModel = gltf.scene;
       
-      // Set initial rotation to 180 degrees (so it faces the camera by default)
-      envModel.rotation.y = Math.PI;
+      // Set initial rotation to 90 degrees (so it faces the camera by default)
+      envModel.rotation.y = Math.PI / 2;
 
       // Traverse to hide the screen in FiespEnv to prevent z-fighting
       envModel.traverse((child) => {
@@ -307,8 +307,8 @@ function loadModels() {
     (gltf) => {
       buildingModel = gltf.scene;
       
-      // Set initial rotation to 180 degrees (so it faces the camera by default)
-      buildingModel.rotation.y = Math.PI;
+      // Set initial rotation to 90 degrees (so it faces the camera by default)
+      buildingModel.rotation.y = Math.PI / 2;
 
       scene.add(buildingModel);
       console.log('FiespScreen loaded successfully.');
