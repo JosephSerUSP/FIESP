@@ -766,8 +766,7 @@ body, html {
     bottom: 0;
     left: 0;
     width: 100%;
-    height: auto;
-    max-height: 80vh;
+    height: 75vh !important;
     transform: translateY(110%); /* Offscreen by default */
     border-right: none;
     border-top: 1px solid var(--border-glass);
@@ -778,6 +777,7 @@ body, html {
     box-shadow: 0 -15px 40px rgba(0, 0, 0, 0.8);
     padding: 24px 24px calc(80px + env(safe-area-inset-bottom)) 24px !important;
     overflow-y: auto !important;
+    -webkit-overflow-scrolling: touch;
   }
 
   .sidebar.expanded {
