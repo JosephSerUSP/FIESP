@@ -276,24 +276,6 @@ function loadModels() {
       // Set initial rotation to 90 degrees (so it faces the camera by default)
       envModel.rotation.y = Math.PI / 2;
 
-      // Traverse to hide the screen in FiespEnv to prevent z-fighting
-      envModel.traverse((child) => {
-        if (child.isMesh && child.material) {
-          const hideScreenMat = (mat) => {
-            if (mat.name && (mat.name.includes('181') || mat.name.toLowerCase().includes('screen') || mat.name.toLowerCase().includes('fiesp'))) {
-              console.log('Hiding screen material in FiespEnv:', mat.name);
-              mat.visible = false;
-            }
-          };
-
-          if (Array.isArray(child.material)) {
-            child.material.forEach(hideScreenMat);
-          } else {
-            hideScreenMat(child.material);
-          }
-        }
-      });
-
       // Show environment only if checked
       if (chkEnv.checked) {
         scene.add(envModel);
