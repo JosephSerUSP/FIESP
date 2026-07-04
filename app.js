@@ -43,6 +43,7 @@ const uvPanelBody = document.getElementById('uv-panel-body');
 const uvPanel = document.getElementById('uv-preview-panel');
 const btnToggleControls = document.getElementById('btn-toggle-controls');
 const controlsPreviewPanel = document.getElementById('controls-preview-panel');
+const langSelect = document.getElementById('lang-select');
 
 // Set warped canvas dimensions (Calibrated aspect ratio 16:9)
 canvasWarped.width = 1280;
@@ -481,6 +482,13 @@ function setupUIEventListeners() {
     link.click();
   });
 
+  // Language selection listener
+  if (langSelect) {
+    langSelect.addEventListener('change', (e) => {
+      updateLanguage(e.target.value);
+    });
+  }
+
   // Mobile Bottom Sheet / Drawer Toggle via Floating HUD & [x] Button
   const sidebar = document.getElementById('app-sidebar');
   const btnCloseSidebar = document.getElementById('btn-close-sidebar');
@@ -637,5 +645,105 @@ function animate() {
   renderer.render(scene, camera);
 }
 
+// Translation Dictionary
+const translations = {
+  pt: {
+    logoTitle: "FIESP",
+    logoSub: "MAPEADOR 3D UV",
+    tagline: "Distorção interativa de conteúdo e visualização 3D para a Galeria Digital do SESI.",
+    inputSource: "Origem do Conteúdo",
+    uploadBtn: "Enviar Imagem",
+    cameraBtn: "Câmera ao Vivo",
+    chooseDrag: "Escolha ou Arraste uma Imagem",
+    noFile: "Nenhum arquivo selecionado",
+    selectCamera: "Selecionar Câmera:",
+    startCam: "Iniciar Câmera",
+    stopCam: "Parar Câmera",
+    inputsBtn: "Entradas",
+    loading: "Carregando Modelo 3D da FIESP...",
+    textureTitle: "Textura Distorcida 2D",
+    textureDesc: "Esta é a imagem distorcida enviada para o sistema de LED do edifício.",
+    exportBtn: "Exportar Textura",
+    controlsTitle: "Controles de Visualização",
+    channelLabel: "Canal do Mapa UV",
+    uvChannel2: "Canal 2 (Calibrado)",
+    uvChannel1: "Canal 1",
+    uvChannel0: "Padrão (Canal 0)",
+    langLabel: "Idioma / Language",
+    showEnv: "Mostrar Ambiente",
+    showUv: "Mostrar Linhas UV",
+    wireframe: "Modo Wireframe",
+    autoRotate: "Auto-Rotacionar Edifício"
+  },
+  en: {
+    logoTitle: "FIESP",
+    logoSub: "3D UV MAPPER",
+    tagline: "Interactive content distortion & 3D preview for the SESI Digital Gallery.",
+    inputSource: "Input Source",
+    uploadBtn: "Upload Image",
+    cameraBtn: "Live Camera",
+    chooseDrag: "Choose or Drag Image",
+    noFile: "No file selected",
+    selectCamera: "Select Camera:",
+    startCam: "Start Live Feed",
+    stopCam: "Stop Live Feed",
+    inputsBtn: "Inputs",
+    loading: "Loading FIESP 3D Model...",
+    textureTitle: "2D Warped Texture",
+    textureDesc: "This is the distorted image sent to the building's LED system.",
+    exportBtn: "Export Texture",
+    controlsTitle: "Preview Controls",
+    channelLabel: "UV Map Channel",
+    uvChannel2: "Channel 2 (Calibrated)",
+    uvChannel1: "Channel 1",
+    uvChannel0: "Default (Channel 0)",
+    langLabel: "Language / Idioma",
+    showEnv: "Show Environment",
+    showUv: "Show UV Overlay",
+    wireframe: "Wireframe Mode",
+    autoRotate: "Auto-Rotate Building"
+  }
+};
+
+let currentLang = localStorage.getItem('fiesp-lang') || 'pt';
+
+function updateLanguage(lang) {
+  currentLang = lang;
+  localStorage.setItem('fiesp-lang', lang);
+  if (langSelect) langSelect.value = lang;
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const trans = translations[lang][key];
+    if (trans) {
+      if (el.tagName === 'OPTION') {
+        el.text = trans;
+      } else {
+        // If it contains icons/spans, only replace the text node
+        let hasTextNode = false;
+        for (let child of el.childNodes) {
+          if (child.nodeType === Node.TEXT_NODE) {
+            child.textContent = trans;
+            hasTextNode = true;
+            break;
+          }
+        }
+        if (!hasTextNode) {
+          el.textContent = trans;
+        }
+      }
+    }
+  });
+
+  // Update toggle camera button text states dynamically
+  if (liveStream) {
+    btnToggleCam.textContent = translations[lang].stopCam;
+  } else {
+    btnToggleCam.textContent = translations[lang].startCam;
+  }
+}
+
 // Run App initialization
 init();
+// Apply default language
+updateLanguage(currentLang);

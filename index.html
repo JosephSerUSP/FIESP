@@ -59,24 +59,24 @@
       <header class="app-header">
         <div class="logo-container">
           <div class="logo-glow"></div>
-          <h1>FIESP</h1>
-          <span class="logo-sub">3D UV MAPPER</span>
+          <h1 data-i18n="logoTitle">FIESP</h1>
+          <span class="logo-sub" data-i18n="logoSub">3D UV MAPPER</span>
         </div>
-        <p class="tagline">Interactive content distortion & 3D preview for the SESI Digital Gallery.</p>
+        <p class="tagline" data-i18n="tagline">Interactive content distortion & 3D preview for the SESI Digital Gallery.</p>
       </header>
 
       <div class="control-sections">
         <!-- Section 1: Content Input -->
         <section class="control-card">
-          <h2 class="section-title"><span class="icon">📸</span> Input Source</h2>
+          <h2 class="section-title"><span class="icon">📸</span> <span data-i18n="inputSource">Input Source</span></h2>
           <div class="input-options">
             <button id="btn-upload" class="input-btn active">
               <span class="btn-icon">📁</span>
-              <span class="btn-text">Upload Image</span>
+              <span class="btn-text" data-i18n="uploadBtn">Upload Image</span>
             </button>
             <button id="btn-camera" class="input-btn">
               <span class="btn-icon">📹</span>
-              <span class="btn-text">Live Camera</span>
+              <span class="btn-text" data-i18n="cameraBtn">Live Camera</span>
             </button>
           </div>
 
@@ -84,8 +84,8 @@
             <label for="file-input" class="file-label">
               <div class="file-dashed">
                 <span class="upload-arrow">↓</span>
-                <span class="upload-text">Choose or Drag Image</span>
-                <span class="file-name-display" id="file-name">No file selected</span>
+                <span class="upload-text" data-i18n="chooseDrag">Choose or Drag Image</span>
+                <span class="file-name-display" id="file-name" data-i18n="noFile">No file selected</span>
               </div>
             </label>
             <input type="file" id="file-input" accept="image/*" style="display: none;">
@@ -93,10 +93,10 @@
 
           <div id="camera-controls" class="sub-controls hidden">
             <div class="camera-select-wrapper">
-              <label for="camera-select">Select Camera:</label>
+              <label for="camera-select" data-i18n="selectCamera">Select Camera:</label>
               <select id="camera-select" class="custom-select"></select>
             </div>
-            <button id="btn-toggle-cam" class="action-btn-primary">Start Live Feed</button>
+            <button id="btn-toggle-cam" class="action-btn-primary" data-i18n="startCam">Start Live Feed</button>
           </div>
         </section>
       </div>
@@ -108,7 +108,7 @@
       
       <!-- Floating HUD Controls -->
       <div class="hud-controls">
-        <button id="hud-btn-source" class="hud-btn">📷 Inputs</button>
+        <button id="hud-btn-source" class="hud-btn">📷 <span data-i18n="inputsBtn">Inputs</span></button>
       </div>
 
       <!-- 3D Canvas Container -->
@@ -116,7 +116,7 @@
         <!-- Canvas will be appended here -->
         <div class="loading-overlay" id="loading-overlay">
           <div class="spinner"></div>
-          <p>Loading FIESP 3D Model...</p>
+          <p data-i18n="loading">Loading FIESP 3D Model...</p>
         </div>
       </div>
 
@@ -125,14 +125,14 @@
         <!-- 1. Floating 2D UV Preview Panel -->
         <div class="uv-preview-panel glass collapsed" id="uv-preview-panel">
           <div class="panel-header">
-            <h3>2D Warped Texture</h3>
+            <h3 data-i18n="textureTitle">2D Warped Texture</h3>
             <button id="btn-toggle-uv" class="panel-toggle-btn">+</button>
           </div>
           <div class="panel-body" id="uv-panel-body">
             <canvas id="canvas-warped" class="preview-canvas"></canvas>
-            <div class="uv-info">This is the distorted image sent to the building's LED system.</div>
+            <div class="uv-info" data-i18n="textureDesc">This is the distorted image sent to the building's LED system.</div>
             <button id="btn-export" class="action-btn-success compact-export-btn">
-              <span>💾</span> Export Texture
+              <span>💾</span> <span data-i18n="exportBtn">Export Texture</span>
             </button>
           </div>
         </div>
@@ -140,16 +140,24 @@
         <!-- 2. Floating Preview Controls Panel -->
         <div class="uv-preview-panel glass collapsed" id="controls-preview-panel">
           <div class="panel-header">
-            <h3>Preview Controls</h3>
+            <h3 data-i18n="controlsTitle">Preview Controls</h3>
             <button id="btn-toggle-controls" class="panel-toggle-btn">+</button>
           </div>
           <div class="panel-body" id="controls-panel-body">
             <div class="control-group">
-              <label class="control-label-mini">UV Map Channel</label>
+              <label class="control-label-mini" data-i18n="channelLabel">UV Map Channel</label>
               <select id="uv-channel-select" class="styled-select mini-select">
-                <option value="uv2" selected>Channel 2 (Calibrated)</option>
-                <option value="uv1">Channel 1</option>
-                <option value="uv">Default (Channel 0)</option>
+                <option value="uv2" selected data-i18n="uvChannel2">Channel 2 (Calibrated)</option>
+                <option value="uv1" data-i18n="uvChannel1">Channel 1</option>
+                <option value="uv" data-i18n="uvChannel0">Default (Channel 0)</option>
+              </select>
+            </div>
+            
+            <div class="control-group" style="margin-top: 10px;">
+              <label class="control-label-mini" data-i18n="langLabel">Language / Idioma</label>
+              <select id="lang-select" class="styled-select mini-select">
+                <option value="pt" selected>Português</option>
+                <option value="en">English</option>
               </select>
             </div>
             
@@ -157,22 +165,22 @@
               <label class="switch-container">
                 <input type="checkbox" id="chk-env" checked>
                 <span class="switch-slider"></span>
-                <span class="switch-label">Show Environment</span>
+                <span class="switch-label" data-i18n="showEnv">Show Environment</span>
               </label>
               <label class="switch-container">
                 <input type="checkbox" id="chk-uv-wireframe">
                 <span class="switch-slider"></span>
-                <span class="switch-label">Show UV Overlay</span>
+                <span class="switch-label" data-i18n="showUv">Show UV Overlay</span>
               </label>
               <label class="switch-container">
                 <input type="checkbox" id="chk-wireframe">
                 <span class="switch-slider"></span>
-                <span class="switch-label">Wireframe Mode</span>
+                <span class="switch-label" data-i18n="wireframe">Wireframe Mode</span>
               </label>
               <label class="switch-container">
                 <input type="checkbox" id="chk-auto-rotate">
                 <span class="switch-slider"></span>
-                <span class="switch-label">Auto-Rotate Building</span>
+                <span class="switch-label" data-i18n="autoRotate">Auto-Rotate Building</span>
               </label>
             </div>
           </div>
