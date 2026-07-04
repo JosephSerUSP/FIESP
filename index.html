@@ -178,6 +178,11 @@
               </select>
             </div>
             
+            <div class="control-group" style="margin-top: 10px;">
+              <label class="control-label-mini">Warp Quality</label>
+              <input type="range" id="quality-slider" min="1" max="4" value="1" style="width: 100%;">
+            </div>
+
             <div class="toggle-grid mini-grid">
               <label class="switch-container">
                 <input type="checkbox" id="chk-env" checked>
@@ -206,6 +211,18 @@
 
       <!-- Hidden standard input canvas for image resizing / webcam sampling -->
       <canvas id="canvas-source" style="display: none;"></canvas>
+
+  <!-- Debug Panel for UV Variables Config -->
+  <div id="debug-panel" class="debug-panel hidden" style="position: absolute; right: 20px; top: 20px; background: rgba(0, 0, 0, 0.85); border: 1px solid #444; border-radius: 8px; padding: 15px; color: white; z-index: 1000; display: none;">
+    <h3 style="margin-top: 0; font-size: 16px; border-bottom: 1px solid #555; padding-bottom: 5px;">Warp Config (Debug)</h3>
+    <div id="debug-inputs" style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; max-height: 400px; overflow-y: auto;">
+      <!-- Inputs will be generated dynamically -->
+    </div>
+    <div style="margin-top: 15px; display: flex; gap: 10px;">
+      <button id="btn-save-config" class="action-btn-success" style="flex: 1; padding: 5px;">Download Config</button>
+      <button id="btn-close-debug" class="action-btn-primary" style="flex: 1; padding: 5px;">Close</button>
+    </div>
+  </div>
     </main>
   </div>
 

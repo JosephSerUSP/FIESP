@@ -9,7 +9,7 @@
  * Calibrated to FiespScreen.glb TEXCOORD_2 panel corner coordinates.
  */
 export class FiespWarper {
-  constructor(sourceCanvas, targetCanvas) {
+  constructor(sourceCanvas, targetCanvas, config = null) {
     this.sourceCanvas = sourceCanvas;
     this.targetCanvas = targetCanvas;
     this.sourceCtx = sourceCanvas.getContext('2d');
@@ -19,20 +19,24 @@ export class FiespWarper {
       useGrid: true
     };
 
-    // Active region height in output canvas pixels
-    this.activeH = 297.0;
+    // Use provided config or default values
+    const cfg = config || {
+      activeH: 297.0,
+      L_Tx1: 0.499,   L_Tx2: 77.504,
+      L_Bx1: 0.499,   L_Bx2: 173.555,
+      M_Tx1: 241.497, M_Tx2: 347.494,
+      M_Bx1: 199.846, M_Bx2: 395.097,
+      R_Tx1: 513.497, R_Tx2: 542.502,
+      R_Bx1: 419.993, R_Bx2: 542.502
+    };
 
-    // Panel corner X coordinates extracted from the calibrated UV map.
-    // _T = top (y=0), _B = bottom (y=activeH).
-    // Left panel
-    this.L_Tx1 = 0.499;    this.L_Tx2 = 77.504;
-    this.L_Bx1 = 0.499;    this.L_Bx2 = 173.555;
-    // Middle panel
-    this.M_Tx1 = 241.497;  this.M_Tx2 = 347.494;
-    this.M_Bx1 = 199.846;  this.M_Bx2 = 395.097;
-    // Right panel
-    this.R_Tx1 = 513.497;  this.R_Tx2 = 542.502;
-    this.R_Bx1 = 419.993;  this.R_Bx2 = 542.502;
+    this.activeH = cfg.activeH;
+    this.L_Tx1 = cfg.L_Tx1; this.L_Tx2 = cfg.L_Tx2;
+    this.L_Bx1 = cfg.L_Bx1; this.L_Bx2 = cfg.L_Bx2;
+    this.M_Tx1 = cfg.M_Tx1; this.M_Tx2 = cfg.M_Tx2;
+    this.M_Bx1 = cfg.M_Bx1; this.M_Bx2 = cfg.M_Bx2;
+    this.R_Tx1 = cfg.R_Tx1; this.R_Tx2 = cfg.R_Tx2;
+    this.R_Bx1 = cfg.R_Bx1; this.R_Bx2 = cfg.R_Bx2;
   }
 
   updateParams(newParams) {
