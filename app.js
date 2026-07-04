@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { FiespWarper } from './warper.js';
 
 // Global App State
 let scene, camera, renderer, controls;
@@ -11,6 +10,7 @@ let screenMesh = null;
 let screenMaterial = null;
 let canvasTexture = null;
 let warper = null;
+let warpConfig = null;
 let liveStream = null;
 let videoFileElement = null;
 let animationFrameId = null;
@@ -52,18 +52,45 @@ const uvPanel = document.getElementById('uv-preview-panel');
 const btnToggleControls = document.getElementById('btn-toggle-controls');
 const controlsPreviewPanel = document.getElementById('controls-preview-panel');
 const langSelect = document.getElementById('lang-select');
+const qualitySlider = document.getElementById('quality-slider');
+
+const debugPanel = document.getElementById('debug-panel');
+const debugInputsContainer = document.getElementById('debug-inputs');
+const btnSaveConfig = document.getElementById('btn-save-config');
+const btnCloseDebug = document.getElementById('btn-close-debug');
 
 // Set warped canvas dimensions (Calibrated aspect ratio 16:9)
 canvasWarped.width = 1280;
 canvasWarped.height = 720;
 
 // Initialize Application
-function init() {
+async function init() {
+  await fetchWarpConfig();
   initThreeJS();
   initWarper();
   loadModels();
   setupUIEventListeners();
   animate();
+}
+
+async function fetchWarpConfig() {
+  try {
+    const res = await fetch('warp_config.json');
+    warpConfig = await res.json();
+    console.log('Loaded warp config:', warpConfig);
+  } catch (err) {
+    console.error('Failed to load warp_config.json, using defaults:', err);
+    // Provide defaults so the app doesn't crash
+    warpConfig = {
+      "activeH": 297.0,
+      "L_Tx1": 0.499, "L_Tx2": 77.504,
+      "L_Bx1": 0.499, "L_Bx2": 173.555,
+      "M_Tx1": 241.497, "M_Tx2": 347.494,
+      "M_Bx1": 199.846, "M_Bx2": 395.097,
+      "R_Tx1": 513.497, "R_Tx2": 542.502,
+      "R_Bx1": 419.993, "R_Bx2": 542.502
+    };
+  }
 }
 
 // Initialize Three.js Scene, Camera, Lights & Controls
@@ -121,10 +148,32 @@ function initThreeJS() {
   window.addEventListener('resize', onWindowResize);
 }
 
+let warpWorker = null;
+let isWarping = false;
+let qualityStep = 1; // 1 = highest quality
+
 // Initialize the 2D canvas warping engine
 function initWarper() {
-  warper = new FiespWarper(canvasSource, canvasWarped);
+  warpWorker = new Worker('warpWorker.js');
   
+  warpWorker.onmessage = function(e) {
+    const { destData } = e.data;
+    const clampedArray = new Uint8ClampedArray(destData);
+    const imgData = new ImageData(clampedArray, canvasWarped.width, canvasWarped.height);
+    const ctx = canvasWarped.getContext('2d');
+    ctx.putImageData(imgData, 0, 0);
+
+    isWarping = false;
+
+    if (chkUvWireframe && chkUvWireframe.checked) {
+      drawUVWireframe();
+    }
+
+    if (canvasTexture) {
+      canvasTexture.needsUpdate = true;
+    }
+  };
+
   // Create CanvasTexture
   canvasTexture = new THREE.CanvasTexture(canvasWarped);
   canvasTexture.colorSpace = THREE.SRGBColorSpace;
@@ -152,16 +201,25 @@ function initWarper() {
 
 // Global warp trigger with optional UV wireframe overlay drawing
 function triggerWarp() {
-  if (!warper) return;
-  warper.warp();
+  if (!warpWorker || isWarping) return;
   
-  if (chkUvWireframe && chkUvWireframe.checked) {
-    drawUVWireframe();
-  }
+  const srcW = canvasSource.width;
+  const srcH = canvasSource.height;
+  if (srcW === 0 || srcH === 0) return;
+
+  const ctx = canvasSource.getContext('2d');
+  const srcImgData = ctx.getImageData(0, 0, srcW, srcH);
   
-  if (canvasTexture) {
-    canvasTexture.needsUpdate = true;
-  }
+  isWarping = true;
+  warpWorker.postMessage({
+    srcData: srcImgData.data,
+    w: canvasWarped.width,
+    h: canvasWarped.height,
+    srcW: srcW,
+    srcH: srcH,
+    config: warpConfig,
+    qualityStep: qualityStep
+  });
 }
 
 // Draws the 3D mesh's UV triangles directly on the 2D canvas for calibration inspection
@@ -276,24 +334,6 @@ function loadModels() {
       // Set initial rotation to 90 degrees (so it faces the camera by default)
       envModel.rotation.y = Math.PI / 2;
 
-      // Traverse to hide the screen in FiespEnv to prevent z-fighting
-      envModel.traverse((child) => {
-        if (child.isMesh && child.material) {
-          const hideScreenMat = (mat) => {
-            if (mat.name && (mat.name.includes('181') || mat.name.toLowerCase().includes('screen') || mat.name.toLowerCase().includes('fiesp'))) {
-              console.log('Hiding screen material in FiespEnv:', mat.name);
-              mat.visible = false;
-            }
-          };
-
-          if (Array.isArray(child.material)) {
-            child.material.forEach(hideScreenMat);
-          } else {
-            hideScreenMat(child.material);
-          }
-        }
-      });
-
       // Show environment only if checked
       if (chkEnv.checked) {
         scene.add(envModel);
@@ -370,6 +410,39 @@ function onWindowResize() {
   camera.aspect = canvas3DContainer.clientWidth / canvas3DContainer.clientHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(canvas3DContainer.clientWidth, canvas3DContainer.clientHeight);
+}
+
+function buildDebugPanel() {
+  debugInputsContainer.innerHTML = '';
+  for (const key in warpConfig) {
+    const wrapper = document.createElement('div');
+    wrapper.style.display = 'flex';
+    wrapper.style.flexDirection = 'column';
+
+    const label = document.createElement('label');
+    label.textContent = key;
+    label.style.fontSize = '12px';
+    label.style.color = '#ccc';
+
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.step = '0.001';
+    input.value = warpConfig[key];
+    input.style.padding = '4px';
+    input.style.background = '#222';
+    input.style.border = '1px solid #555';
+    input.style.color = 'white';
+    input.style.borderRadius = '4px';
+
+    input.addEventListener('input', (e) => {
+      warpConfig[key] = parseFloat(e.target.value);
+      triggerWarp();
+    });
+
+    wrapper.appendChild(label);
+    wrapper.appendChild(input);
+    debugInputsContainer.appendChild(wrapper);
+  }
 }
 
 // Setup Event Listeners for UI
@@ -537,6 +610,45 @@ function setupUIEventListeners() {
     link.href = dataURL;
     link.click();
   });
+
+  // Quality Slider listener
+  if (qualitySlider) {
+    qualitySlider.addEventListener('input', (e) => {
+      qualityStep = parseInt(e.target.value);
+      // Ensure we immediately update the canvas if an image is loaded
+      triggerWarp();
+    });
+  }
+
+  // Debug panel listener
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'd' || e.key === 'D') {
+      if (debugPanel.style.display === 'none') {
+        buildDebugPanel();
+        debugPanel.style.display = 'block';
+      } else {
+        debugPanel.style.display = 'none';
+      }
+    }
+  });
+
+  if (btnCloseDebug) {
+    btnCloseDebug.addEventListener('click', () => {
+      debugPanel.style.display = 'none';
+    });
+  }
+
+  if (btnSaveConfig) {
+    btnSaveConfig.addEventListener('click', () => {
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(warpConfig, null, 2));
+      const downloadAnchorNode = document.createElement('a');
+      downloadAnchorNode.setAttribute("href", dataStr);
+      downloadAnchorNode.setAttribute("download", "warp_config.json");
+      document.body.appendChild(downloadAnchorNode);
+      downloadAnchorNode.click();
+      downloadAnchorNode.remove();
+    });
+  }
 
   // Language selection listener
   if (langSelect) {
