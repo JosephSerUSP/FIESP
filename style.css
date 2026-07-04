@@ -517,59 +517,68 @@ body, html {
 }
 
 .uv-preview-panel.glass {
-  background: transparent;
+  background: rgba(10, 14, 30, 0.4);
   border: 1px solid rgba(255, 255, 255, 0.12);
-  backdrop-filter: blur(8px);
-  box-shadow: none;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
 }
 
 .panel-header {
-  background: rgba(10, 14, 30, 0.4);
-  padding: 12px 16px;
+  background: rgba(10, 14, 30, 0.6);
+  padding: 8px 12px;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
   border-bottom: 1px solid rgba(255, 255, 255, 0.12);
 }
 
+/* Collapsed Panel turns into a simple floating circular button! */
 .uv-preview-panel.collapsed {
-  /* Keep container width consistent */
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--bg-glass);
+  border: 1px solid var(--border-glass);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(12px);
 }
 
-.panel-header {
-  background: rgba(10, 14, 30, 0.8);
-  padding: 12px 16px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid var(--border-glass);
+.uv-preview-panel.collapsed .panel-header {
+  background: transparent;
+  padding: 0;
+  border-bottom: none;
+  width: 100%;
+  height: 100%;
+  justify-content: center;
 }
 
-.panel-header h3 {
-  font-family: var(--font-display);
-  font-size: 0.85rem;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+.uv-preview-panel.collapsed .panel-toggle-btn {
+  width: 100%;
+  height: 100%;
+  font-size: 1.35rem;
+}
+
+.uv-preview-panel.collapsed .panel-toggle-btn:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .panel-toggle-btn {
   background: none;
   border: none;
-  color: var(--text-muted);
-  font-size: 1.2rem;
+  color: var(--text-main);
+  font-size: 1.25rem;
   cursor: pointer;
-  transition: var(--transition-smooth);
-  width: 24px;
-  height: 24px;
+  width: 36px;
+  height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 4px;
+  border-radius: 50%;
+  transition: var(--transition-smooth);
 }
 
 .panel-toggle-btn:hover {
-  background: rgba(255, 255, 255, 0.05);
-  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .panel-body {
@@ -703,13 +712,13 @@ body, html {
 }
 
 .hud-controls {
-  position: absolute;
-  bottom: 30px;
+  position: fixed;
+  bottom: calc(24px + env(safe-area-inset-bottom));
   left: 50%;
   transform: translateX(-50%);
   display: flex;
   gap: 15px;
-  z-index: 9;
+  z-index: 99;
 }
 
 .hud-btn {

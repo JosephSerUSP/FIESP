@@ -456,20 +456,16 @@ function setupUIEventListeners() {
   // 2D UV Preview toggler (Mutually exclusive with Preview Controls)
   btnToggleUv.addEventListener('click', () => {
     const isCollapsed = uvPanel.classList.toggle('collapsed');
-    btnToggleUv.textContent = isCollapsed ? '+' : '−';
     if (!isCollapsed) {
       controlsPreviewPanel.classList.add('collapsed');
-      btnToggleControls.textContent = '+';
     }
   });
 
   // Preview Controls toggler (Mutually exclusive with 2D UV Preview)
   btnToggleControls.addEventListener('click', () => {
     const isCollapsed = controlsPreviewPanel.classList.toggle('collapsed');
-    btnToggleControls.textContent = isCollapsed ? '+' : '−';
     if (!isCollapsed) {
       uvPanel.classList.add('collapsed');
-      btnToggleUv.textContent = '+';
     }
   });
 
