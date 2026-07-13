@@ -39,6 +39,7 @@ const btnVideoLoop = document.getElementById('btn-video-loop');
 const cameraSelect = document.getElementById('camera-select');
 const btnToggleCam = document.getElementById('btn-toggle-cam');
 const btnExport = document.getElementById('btn-export');
+const chkApplyDistortion = document.getElementById('chk-apply-distortion');
 
 // Toggles
 const chkEnv = document.getElementById('chk-env');
@@ -151,19 +152,26 @@ function initThreeJS() {
 let warpWorker = null;
 let isWarping = false;
 let qualityStep = 1; // 1 = highest quality
+let warpRequestId = 0;
 
 // Initialize the 2D canvas warping engine
 function initWarper() {
   warpWorker = new Worker('warpWorker.js');
   
   warpWorker.onmessage = function(e) {
-    const { destData } = e.data;
+    const { destData, requestId } = e.data;
+    isWarping = false;
+
+    // Ignore a completed warp when the user has switched to a pre-distorted source.
+    if (requestId !== warpRequestId || !chkApplyDistortion.checked) {
+      if (chkApplyDistortion.checked) triggerWarp();
+      return;
+    }
+
     const clampedArray = new Uint8ClampedArray(destData);
     const imgData = new ImageData(clampedArray, canvasWarped.width, canvasWarped.height);
     const ctx = canvasWarped.getContext('2d');
     ctx.putImageData(imgData, 0, 0);
-
-    isWarping = false;
 
     if (chkUvWireframe && chkUvWireframe.checked) {
       drawUVWireframe();
@@ -201,11 +209,17 @@ function initWarper() {
 
 // Global warp trigger with optional UV wireframe overlay drawing
 function triggerWarp() {
-  if (!warpWorker || isWarping) return;
-  
   const srcW = canvasSource.width;
   const srcH = canvasSource.height;
   if (srcW === 0 || srcH === 0) return;
+
+  if (!chkApplyDistortion.checked) {
+    warpRequestId += 1;
+    drawSourceWithoutDistortion();
+    return;
+  }
+
+  if (!warpWorker || isWarping) return;
 
   const ctx = canvasSource.getContext('2d');
   const srcImgData = ctx.getImageData(0, 0, srcW, srcH);
@@ -218,8 +232,24 @@ function triggerWarp() {
     srcW: srcW,
     srcH: srcH,
     config: warpConfig,
-    qualityStep: qualityStep
+    qualityStep: qualityStep,
+    requestId: ++warpRequestId
   });
+}
+
+// Copies media that has already been prepared in the LED texture layout.
+function drawSourceWithoutDistortion() {
+  const ctx = canvasWarped.getContext('2d');
+  ctx.clearRect(0, 0, canvasWarped.width, canvasWarped.height);
+  ctx.drawImage(canvasSource, 0, 0, canvasWarped.width, canvasWarped.height);
+
+  if (chkUvWireframe && chkUvWireframe.checked) {
+    drawUVWireframe();
+  }
+
+  if (canvasTexture) {
+    canvasTexture.needsUpdate = true;
+  }
 }
 
 // Draws the 3D mesh's UV triangles directly on the 2D canvas for calibration inspection
@@ -577,6 +607,10 @@ function setupUIEventListeners() {
     triggerWarp();
   });
 
+  chkApplyDistortion.addEventListener('change', () => {
+    triggerWarp();
+  });
+
   chkWireframe.addEventListener('change', (e) => {
     screenMaterial.wireframe = e.target.checked;
   });
@@ -850,6 +884,7 @@ const translations = {
     stopCam: "Parar Câmera",
     playBtn: "Reproduzir",
     pauseBtn: "Pausar",
+    applyDistortion: "Aplicar distorção",
     inputsBtn: "Entradas",
     loading: "Carregando Modelo 3D da FIESP...",
     textureTitle: "Textura Distorcida 2D",
@@ -882,6 +917,7 @@ const translations = {
     stopCam: "Stop Live Feed",
     playBtn: "Play",
     pauseBtn: "Pause",
+    applyDistortion: "Apply distortion",
     inputsBtn: "Inputs",
     loading: "Loading FIESP 3D Model...",
     textureTitle: "2D Warped Texture",

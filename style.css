@@ -445,6 +445,12 @@ body, html {
   color: var(--text-main);
 }
 
+.input-warp-toggle {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-glass);
+}
+
 /* --- Footer --- */
 .sidebar-footer {
   margin-top: 24px;
@@ -849,4 +855,3 @@ body, html {
     width: 100%;
   }
 }
-

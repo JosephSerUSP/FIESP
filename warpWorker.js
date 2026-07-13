@@ -1,6 +1,6 @@
 // Worker for CPU-intensive warping calculations
 self.onmessage = function(e) {
-  const { srcData, w, h, srcW, srcH, config, qualityStep } = e.data;
+  const { srcData, w, h, srcW, srcH, config, qualityStep, requestId } = e.data;
   const destData = new Uint8ClampedArray(w * h * 4);
   const activeH = config.activeH;
 
@@ -83,5 +83,5 @@ self.onmessage = function(e) {
   }
 
   // Pass the processed array buffer back
-  self.postMessage({ destData: destData.buffer }, [destData.buffer]);
+  self.postMessage({ destData: destData.buffer, requestId }, [destData.buffer]);
 };
